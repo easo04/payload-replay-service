@@ -5,13 +5,13 @@ aws:
   region: us-east-1
 
 capture:
-  bucket-name: gw-payload-replay-poc
+  bucket-name: ${CAPTURE_BUCKET_NAME}
 
 logging:
-    level:
-      org.springframework.web: DEBUG
+  level:
+    org.springframework.web: DEBUG
 
 replay:
-  baseline-policy-service-url: http://localhost:8080
-  candidate-policy-service-url: http://localhost:8080
-  thread-pool-size: 20
+  baseline-policy-service-url: ${REPLAY_BASELINE_POLICY_SERVICE_URL}
+  candidate-policy-service-url: ${REPLAY_CANDIDATE_POLICY_SERVICE_URL}
+  thread-pool-size: 10

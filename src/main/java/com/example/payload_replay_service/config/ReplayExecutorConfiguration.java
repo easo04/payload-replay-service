@@ -13,7 +13,10 @@ public class ReplayExecutorConfiguration {
     public ExecutorService replayExecutor(
             ReplayProperties properties) {
 
-        return Executors.newFixedThreadPool(
-                properties.threadPoolSize());
+        int poolSize = properties.threadPoolSize() != null
+                ? properties.threadPoolSize()
+                : 10; // fallback safe
+
+        return Executors.newFixedThreadPool(poolSize);
     }
 }
