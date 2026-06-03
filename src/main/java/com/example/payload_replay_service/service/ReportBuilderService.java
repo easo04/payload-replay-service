@@ -13,7 +13,7 @@ public class ReportBuilderService {
 
     public TestExecutionReport build(
             String service,
-            List<ReplayResult> results) {
+            List<ReplayResult> results, String executionId, long duration) {
 
         int successCount =
                 (int) results.stream()
@@ -29,13 +29,14 @@ public class ReportBuilderService {
                         : ((double) successCount / results.size()) * 100;
 
         return new TestExecutionReport(
-                UUID.randomUUID().toString(),
+                executionId,
                 Instant.now(),
                 service,
                 results.size(),
                 successCount,
                 failureCount,
                 successRate,
+                duration,
                 results
         );
     }

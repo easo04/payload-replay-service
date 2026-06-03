@@ -11,6 +11,7 @@ public record TestExecutionReport(
         int successCount,
         int failureCount,
         double successRate,
+        long duration,
         List<ReplayResult> results
 ) {
 }

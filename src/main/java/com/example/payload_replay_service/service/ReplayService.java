@@ -29,13 +29,15 @@ public class ReplayService {
     private final ObjectMapper objectMapper;
     private final ReplayProperties replayProperties;
     private final ExecutorService replayExecutor;
+    private final ExecutionStore executionStore;
 
-    public void replay(String service,
+    public String replay(String service,
                        String date,
                        String method,
                        int limit) throws Exception {
 
-        long start = System.currentTimeMillis();
+        String executionId = UUID.randomUUID().toString();
+        long startTime = System.currentTimeMillis();
 
         //récupérer les payloads dans S3
         List<PayloadMetadata> keys =
@@ -124,18 +126,26 @@ public class ReplayService {
             }
         }
 
+        long duration = System.currentTimeMillis() - startTime;
+
         //produire résultat final
         TestExecutionReport report =
-                reportBuilderService.build(service, results);
+                reportBuilderService.build(service, results, executionId, duration);
 
         String reportId = UUID.randomUUID().toString();
         String reportDate = LocalDate.now().toString();
 
         String reportKey = String.format(
-                "reports/%s/%s-%s.json",
+                "reports/%s/%s/%s/report.json",
                 reportDate,
                 service,
-                reportId
+                executionId
+        );
+
+        //sauvegarder en mémoire l'exécution
+        executionStore.save(
+                executionId,
+                report
         );
 
         //enregistrer le rapport dans S3
@@ -145,7 +155,8 @@ public class ReplayService {
                 report
         );
 
-        long duration = System.currentTimeMillis() - start;
         System.out.println("TOTAL TIME D'EXÉCUTION: " + duration + "ms");
+
+        return executionId;
     }
 }
