@@ -35,10 +35,11 @@ public class ReplayService {
                        String method,
                        int limit) throws Exception {
 
+        long start = System.currentTimeMillis();
+
+        //récupérer les payloads dans S3
         List<PayloadMetadata> keys =
                 searchService.search(service, date, method, limit);
-
-        System.out.println("keys: " + keys);
 
         List<String> payloads =
                 downloadService.downloadBatch(
@@ -50,6 +51,7 @@ public class ReplayService {
 
         List<Future<?>> futures = new ArrayList<>();
 
+        //pour chaque payload, exécuter les requêtes et comparer
         for (String json : payloads) {
 
             futures.add(replayExecutor.submit(() -> {
@@ -71,6 +73,7 @@ public class ReplayService {
                                     + "/"
                                     + captured.endpoint();
 
+                    //valider si c'est un GET
                     if (captured.queryString() != null
                             && !captured.queryString().isBlank()) {
 
@@ -94,6 +97,7 @@ public class ReplayService {
                                     captured.payload(),
                                     captured.headers());
 
+                    //comparer résultat des deux appels
                     ReplayResult result =
                             comparator.compare(
                                     captured.captureId(),
@@ -120,6 +124,7 @@ public class ReplayService {
             }
         }
 
+        //produire résultat final
         TestExecutionReport report =
                 reportBuilderService.build(service, results);
 
@@ -133,12 +138,14 @@ public class ReplayService {
                 reportId
         );
 
+        //enregistrer le rapport dans S3
         reportService.saveReport(
                 properties.bucketName(),
                 reportKey,
                 report
         );
 
-        System.out.println("Report final: " + report);
+        long duration = System.currentTimeMillis() - start;
+        System.out.println("TOTAL TIME D'EXÉCUTION: " + duration + "ms");
     }
 }
