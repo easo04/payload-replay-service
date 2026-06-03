@@ -1,0 +1,17 @@
+server:
+  port: 9090
+
+aws:
+  region: us-east-1
+
+capture:
+  bucket-name: gw-payload-replay-poc
+
+logging:
+    level:
+      org.springframework.web: DEBUG
+
+replay:
+  baseline-policy-service-url: http://localhost:8080
+  candidate-policy-service-url: http://localhost:8080
+  thread-pool-size: 20
