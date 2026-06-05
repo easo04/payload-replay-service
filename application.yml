@@ -3,6 +3,8 @@ server:
 
 aws:
   region: us-east-1
+  dynamodb:
+      table-name: ${AWS_DYNAMODB_TABLE_NAME}
 
 capture:
   bucket-name: ${CAPTURE_BUCKET_NAME}

@@ -1,7 +1,9 @@
 package com.example.payload_replay_service.controller;
 
+import com.example.payload_replay_service.dto.ReplaySummaryResponse;
 import com.example.payload_replay_service.model.ReplayRequest;
 import com.example.payload_replay_service.service.ExecutionStore;
+import com.example.payload_replay_service.service.ReplayQueryService;
 import com.example.payload_replay_service.service.ReplayService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,14 @@ public class ReplayController {
 
     private final ReplayService replayService;
     private final ExecutionStore executionStore;
+
+    private final ReplayQueryService replayQueryService;
+
+    @GetMapping("/latest")
+    public ReplaySummaryResponse latestReplay() {
+        //cherche directement dans la BD DynamoDB
+        return replayQueryService.latestReplay();
+    }
 
     @PostMapping
     public ResponseEntity<?> replay(@RequestBody ReplayRequest request)
@@ -50,6 +60,7 @@ public class ReplayController {
 
     @GetMapping("/{executionId}")
     public Object getExecution(@PathVariable String executionId) {
+        //cherche en mémoire
         return executionStore.get(executionId);
     }
 }

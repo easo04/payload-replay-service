@@ -3,10 +3,12 @@ package com.example.payload_replay_service.service;
 import com.example.payload_replay_service.config.CaptureProperties;
 import com.example.payload_replay_service.config.ReplayProperties;
 import com.example.payload_replay_service.model.*;
+import com.example.payload_replay_service.repository.ReplayExecutionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,8 @@ public class ReplayService {
     private final ReplayProperties replayProperties;
     private final ExecutorService replayExecutor;
     private final ExecutionStore executionStore;
+
+    private final ReplayExecutionRepository repository;
 
     public String replay(String service,
                        String date,
@@ -132,7 +136,18 @@ public class ReplayService {
         TestExecutionReport report =
                 reportBuilderService.build(service, results, executionId, duration);
 
-        String reportId = UUID.randomUUID().toString();
+        //sauvegarder le raport dans le bucket s3
+        saveReport(report, service, executionId);
+
+        //sauvegarder le sommaire du rapport dans la BD
+        saveReplayExecution(report, executionId);
+
+        System.out.println("TOTAL TIME D'EXÉCUTION: " + duration + "ms");
+
+        return executionId;
+    }
+
+    private void saveReport(TestExecutionReport report, String service, String executionId){
         String reportDate = LocalDate.now().toString();
 
         String reportKey = String.format(
@@ -154,9 +169,26 @@ public class ReplayService {
                 reportKey,
                 report
         );
+    }
 
-        System.out.println("TOTAL TIME D'EXÉCUTION: " + duration + "ms");
+    private void saveReplayExecution(TestExecutionReport report, String executionId) {
+        ReplayExecutionEntity entity =
+                new ReplayExecutionEntity();
 
-        return executionId;
+        entity.setExecutionId(executionId);
+        entity.setCreatedAtEpoch(Instant.now().toEpochMilli());
+        entity.setStatus(report.failureCount() == 0
+                        ? "SUCCESS"
+                        : "PARTIAL_SUCCESS");
+
+        entity.setDurationMs(report.duration());
+        entity.setSuccessRate(report.successRate());
+        entity.setRequestedTests(report.totalTests());
+        entity.setExecutedTests(report.totalTests());
+        entity.setSuccessfulTests(report.successCount());
+        entity.setFailedTests(report.failureCount());
+        entity.setCompletedAt(Instant.now().toString());
+
+        repository.save(entity);
     }
 }
